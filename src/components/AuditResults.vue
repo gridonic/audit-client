@@ -1,5 +1,17 @@
 <template>
   <div class="bg-white border rounded-lg p-4 shadow">
+    <!-- Screenshot Section -->
+    <div v-if="data.screenshot" class="mb-6">
+      <h2 class="text-2xl font-semibold mb-4 text-gray-800">Website Screenshot</h2>
+      <div class="border rounded-lg overflow-hidden">
+        <img 
+          :src="'data:image/png;base64,' + data.screenshot" 
+          alt="Website screenshot" 
+          class="w-full h-auto"
+        />
+      </div>
+    </div>
+
     <h2 class="text-2xl font-semibold mb-4 text-gray-800">Audit Scores</h2>
     <ul class="grid grid-cols-2 gap-4 text-lg text-gray-700">
       <li><strong>Performance:</strong> {{ data.performance }}</li>
