@@ -26,7 +26,7 @@ async function handleSubmit() {
   error.value = ''
   loading.value = true
   try {
-    const res = await fetch('http://localhost:3000/api/audit', {
+    const res = await fetch('https://audit-server-tr0q.onrender.com', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: url.value }),
