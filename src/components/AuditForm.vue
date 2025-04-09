@@ -26,10 +26,10 @@ async function handleSubmit() {
   error.value = ''
   loading.value = true
   try {
-    const res = await fetch('https://audit-server-tr0q.onrender.com', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: url.value }),
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/audit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url: url.value }),
     })
 
     const data = await res.json()
