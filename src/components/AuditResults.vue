@@ -72,13 +72,43 @@
 </div>
   </div>
   <div class="mt-6">
-  <h3 class="text-xl font-semibold text-gray-800 mb-2">AI-Powered Visual Design Feedback</h3>
-  <p class="text-sm whitespace-pre-line text-gray-700 bg-gray-50 p-4 rounded border">
-    {{ data.designAnalysis || 'No visual feedback available' }}
-  </p>
-</div>
+    <h3 class="text-xl font-semibold text-gray-800 mb-2">AI-Powered Visual Design Analysis</h3>
+    <div class="bg-gray-50 p-4 rounded border">
+      <div v-if="data.visualAnalysis" class="prose prose-sm max-w-none">
+        <div class="whitespace-pre-line text-gray-700">{{ data.visualAnalysis }}</div>
+      </div>
+      <div v-else class="text-sm text-gray-500 italic">
+        No visual analysis available at this time.
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 const { data } = defineProps(['data']);
 </script>
+
+<style>
+.prose {
+  max-width: 65ch;
+  color: #374151;
+}
+.prose p {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+}
+.prose strong {
+  color: #111827;
+  font-weight: 600;
+}
+.prose ul {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+  padding-left: 1.625em;
+  list-style-type: disc;
+}
+.prose li {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+</style>
