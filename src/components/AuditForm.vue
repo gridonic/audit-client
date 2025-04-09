@@ -36,7 +36,12 @@ async function handleSubmit() {
     if (res.ok) {
       emit('results', data)
     } else {
-      error.value = data.error || 'Unknown error'
+      if (data.fallback) {
+        console.warn('Using fallback data due to server error:', data.error)
+        emit('results', data.fallback)
+      } else {
+        error.value = data.error || 'Unknown error'
+      }
     }
   } catch (e) {
     error.value = 'Failed to reach backend'
