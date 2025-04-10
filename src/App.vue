@@ -29,6 +29,7 @@ import AuditResults from './components/AuditResults.vue'
 
 const results = ref(null)
 function handleResults(data) {
+  console.log('Received results in App.vue:', data)
   results.value = data
 }
 </script>
