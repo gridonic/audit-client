@@ -29,7 +29,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 
-const emit = defineEmits(['results'])
+const emit = defineEmits(['results', 'loading', 'error', 'url'])
 const url = ref('')
 const loading = ref(false)
 const error = ref('')
@@ -44,6 +44,10 @@ const apiUrl = computed(() => {
 async function handleSubmit() {
   error.value = ''
   loading.value = true
+  emit('loading', true)
+  emit('error', '')
+  emit('url', url.value)
+  
   try {
     console.log('Sending request to:', `${apiUrl.value}/api/audit`)
     const res = await fetch(`${apiUrl.value}/api/audit`, {
@@ -63,13 +67,16 @@ async function handleSubmit() {
         emit('results', data.fallback)
       } else {
         error.value = data.error || 'Unknown error'
+        emit('error', error.value)
       }
     }
   } catch (e) {
     console.error('Error:', e)
     error.value = 'Failed to reach backend'
+    emit('error', error.value)
   } finally {
     loading.value = false
+    emit('loading', false)
   }
 }
 </script>
