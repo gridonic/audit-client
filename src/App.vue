@@ -5,44 +5,69 @@
         Gridonic Website Audit Tool
       </h1>
       <AuditForm 
-        @results="handleResults" 
-        @loading="handleLoading" 
-        @error="handleError" 
-        @url="handleUrl" 
+        @submit="handleSubmit" 
       />
-      <div v-if="results" class="mt-8 space-y-6">
-        <AuditResults :data="results" :url="url" :loading="loading" :error="error" :results="results" />
+      <div class="mt-8 space-y-6">
+        <ChatResults 
+          :url="url" 
+          :loading="loading" 
+          :error="error" 
+          :results="results" 
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import AuditForm from './components/AuditForm.vue'
-import AuditResults from './components/ChatResults.vue'
+import { ref } from 'vue';
+import AuditForm from './components/AuditForm.vue';
+import ChatResults from './components/ChatResults.vue';
 
-const results = ref(null)
-const url = ref('')
-const loading = ref(false)
-const error = ref('')
+const url = ref('');
+const loading = ref(false);
+const error = ref('');
+const results = ref(null);
 
-function handleResults(data) {
-  console.log('Received results in App.vue:', data)
-  results.value = data
-}
+const handleSubmit = async (formUrl) => {
+  url.value = formUrl;
+  loading.value = true;
+  error.value = '';
+  results.value = null;
 
-function handleLoading(isLoading) {
-  loading.value = isLoading
-}
+  try {
+    console.log('Sending request to server...');
+    const response = await fetch('http://localhost:8080/api/audit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url: formUrl }),
+    });
 
-function handleError(err) {
-  error.value = err
-}
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-function handleUrl(newUrl) {
-  url.value = newUrl
-}
+    console.log('Received response from server');
+    const data = await response.json();
+    console.log('Parsed response data:', data);
+    
+    // Ensure we have valid data before setting results
+    if (data && (data.screenshots || data.performance || data.visualAnalysis)) {
+      results.value = data;
+      console.log('Results set successfully');
+    } else {
+      throw new Error('Invalid response data received from server');
+    }
+  } catch (e) {
+    console.error('Error during audit:', e);
+    error.value = e.message;
+  } finally {
+    console.log('Setting loading to false');
+    loading.value = false;
+  }
+};
 </script>
 
 <style>

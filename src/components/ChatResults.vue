@@ -1,75 +1,40 @@
 <template>
-  <div class="chat-container bg-gray-50 rounded-2xl p-6">
-    <!-- Chat messages -->
-    <div class="chat-messages space-y-6" ref="messagesContainer">
-      <!-- System message -->
-      <div class="message system-message bg-white p-4 rounded-xl shadow-sm">
-        <div class="flex items-center space-x-2 mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span class="font-medium text-gray-700">System</span>
-        </div>
-        <p class="text-gray-600">Analyzing {{ url }}...</p>
-      </div>
+  <div class="chat-container">
+    <!-- Loading State -->
+    <div v-if="loading && !hasResults" class="loading-state">
+      <div class="spinner"></div>
+      <p>Analyzing your website...</p>
+    </div>
 
-      <!-- Loading state -->
-      <div v-if="loading" class="message system-message bg-white p-4 rounded-xl shadow-sm">
-        <div class="flex items-center space-x-2">
-          <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-          <span class="text-gray-600">Running analysis...</span>
-        </div>
-      </div>
+    <!-- Error State -->
+    <div v-else-if="error" class="error-state">
+      <p>{{ error }}</p>
+    </div>
 
-      <!-- Error state -->
-      <div v-if="error" class="message error-message bg-red-50 p-4 rounded-xl">
-        <div class="flex items-center space-x-2 text-red-600">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span class="font-medium">Error</span>
-        </div>
-        <p class="mt-2 text-red-600">{{ error }}</p>
-      </div>
-
-      <!-- Results -->
-      <div v-if="results && !loading && !error" class="space-y-6">
-        <!-- Screenshots -->
-        <div v-if="screenshots.length > 0" class="message bg-white p-4 rounded-xl shadow-sm">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">Screenshots</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div v-for="(screenshot, index) in screenshots" :key="index" class="relative group">
-              <img 
-                :src="screenshot" 
-                :alt="`Screenshot ${index + 1}`"
-                class="w-full h-auto rounded-lg shadow-md transition-transform duration-200 group-hover:scale-[1.02]"
-              />
-              <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 rounded-lg"></div>
-            </div>
+    <!-- Results -->
+    <div v-else-if="results" class="results">
+      <!-- Scores -->
+      <div v-if="scores" class="scores">
+        <div v-for="(score, key) in scores" :key="key" class="score">
+          <h3>{{ key }}</h3>
+          <div class="score-value" :class="getScoreClass(score)">
+            {{ score }}%
           </div>
         </div>
+      </div>
 
-        <!-- Scores -->
-        <div class="message bg-white p-4 rounded-xl shadow-sm">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">Performance Scores</h3>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div v-for="(score, category) in scores" :key="category" 
-              class="bg-gray-50 p-4 rounded-lg text-center">
-              <div class="text-2xl font-bold" :class="getScoreColor(score)">
-                {{ score }}
-              </div>
-              <div class="text-sm text-gray-600 mt-1 capitalize">
-                {{ category }}
-              </div>
-            </div>
-          </div>
-        </div>
+      <!-- Analysis -->
+      <div v-if="analysis" class="analysis">
+        <h2>Visual Analysis</h2>
+        <div class="analysis-content" v-html="analysis"></div>
+      </div>
 
-        <!-- Analysis -->
-        <div class="message bg-white p-4 rounded-xl shadow-sm">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">Visual Analysis</h3>
-          <div class="prose prose-blue max-w-none">
-            <div v-html="analysisContent"></div>
+      <!-- Screenshots -->
+      <div v-if="screenshots.length > 0" class="screenshots">
+        <h2>Screenshots</h2>
+        <div class="screenshots-grid">
+          <div v-for="(screenshot, index) in screenshots" :key="index" class="screenshot">
+            <img :src="screenshot" :alt="`Website screenshot ${index + 1}`" />
           </div>
         </div>
       </div>
@@ -78,89 +43,199 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { computed, watch } from 'vue';
 
 const props = defineProps({
-  data: Object,
-  url: String,
   loading: Boolean,
   error: String,
   results: Object
-})
+});
 
-const messagesContainer = ref(null)
+// Add a watcher to log when props change
+watch(() => props.loading, (newValue) => {
+  console.log('Loading state changed:', newValue);
+});
+
+watch(() => props.results, (newValue) => {
+  console.log('Results changed:', newValue ? 'Has data' : 'No data');
+});
+
+// Computed property to check if we have valid results
+const hasResults = computed(() => {
+  return props.results && (
+    props.results.screenshots?.length > 0 || 
+    props.results.performance || 
+    props.results.visualAnalysis
+  );
+});
 
 const screenshots = computed(() => {
   if (!props.results?.screenshots) return [];
-  return Array.isArray(props.results.screenshots) ? props.results.screenshots : [props.results.screenshots];
-})
-
-const scores = computed(() => ({
-  performance: props.results?.performance || 0,
-  accessibility: props.results?.accessibility || 0,
-  bestPractices: props.results?.bestPractices || 0,
-  seo: props.results?.seo || 0
-}))
-
-const analysisContent = computed(() => {
-  if (!props.results?.visualAnalysis) return ''
-  return props.results.visualAnalysis.replace(/\n/g, '<br>')
-})
-
-function getScoreColor(score) {
-  if (score >= 90) return 'text-green-600'
-  if (score >= 50) return 'text-yellow-600'
-  return 'text-red-600'
-}
-
-watch(() => props.results, () => {
-  setTimeout(() => {
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+  const screenshotsArray = Array.isArray(props.results.screenshots) 
+    ? props.results.screenshots 
+    : [props.results.screenshots];
+  
+  return screenshotsArray.map(screenshot => {
+    if (typeof screenshot === 'string') {
+      return screenshot.startsWith('data:image') 
+        ? screenshot 
+        : `data:image/png;base64,${screenshot}`;
     }
-  }, 100)
-}, { deep: true })
+    return '';
+  }).filter(Boolean);
+});
+
+const scores = computed(() => {
+  if (!props.results) return null;
+  return {
+    Performance: Math.round(props.results.performance) || 0,
+    Accessibility: Math.round(props.results.accessibility) || 0,
+    'Best Practices': Math.round(props.results.bestPractices) || 0,
+    SEO: Math.round(props.results.seo) || 0
+  };
+});
+
+const analysis = computed(() => {
+  if (!props.results?.visualAnalysis) return '';
+  // Convert markdown-style line breaks to HTML
+  return props.results.visualAnalysis.replace(/\n/g, '<br>');
+});
+
+const getScoreClass = (score) => {
+  if (score >= 90) return 'score-good';
+  if (score >= 50) return 'score-warning';
+  return 'score-bad';
+};
 </script>
 
 <style scoped>
 .chat-container {
-  max-height: 80vh;
-  overflow-y: auto;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
-.chat-messages {
-  display: flex;
-  flex-direction: column;
+.loading-state {
+  text-align: center;
+  padding: 2rem;
 }
 
-.message {
-  max-width: 100%;
-  margin-bottom: 1rem;
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
 }
 
-.system-message {
-  background-color: #f8fafc;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.error-message {
-  background-color: #fef2f2;
+.error-state {
+  color: #e74c3c;
+  text-align: center;
+  padding: 2rem;
 }
 
-.prose {
+.scores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.score {
+  text-align: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+}
+
+.score h3 {
+  margin: 0 0 0.5rem;
+  color: #2c3e50;
+}
+
+.score-value {
+  font-size: 2rem;
+  font-weight: bold;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.score-good {
+  color: #27ae60;
+  background: #e8f5e9;
+}
+
+.score-warning {
+  color: #f39c12;
+  background: #fff3e0;
+}
+
+.score-bad {
+  color: #e74c3c;
+  background: #fde8e8;
+}
+
+.analysis {
+  background: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.analysis h2 {
+  margin: 0 0 1rem;
+  color: #2c3e50;
+}
+
+.analysis-content {
   line-height: 1.6;
+  color: #34495e;
 }
 
-.prose p {
-  margin-bottom: 1rem;
+.analysis-content :deep(h3) {
+  color: #2c3e50;
+  margin: 1.5rem 0 1rem;
 }
 
-.prose ul {
-  list-style-type: disc;
+.analysis-content :deep(ul) {
   padding-left: 1.5rem;
-  margin-bottom: 1rem;
+  margin: 1rem 0;
 }
 
-.prose li {
-  margin-bottom: 0.5rem;
+.analysis-content :deep(li) {
+  margin: 0.5rem 0;
+}
+
+.screenshots {
+  margin-top: 2rem;
+  background: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.screenshots h2 {
+  margin: 0 0 1rem;
+  color: #2c3e50;
+}
+
+.screenshots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.screenshot img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 </style> 
