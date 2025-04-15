@@ -37,7 +37,9 @@ const handleSubmit = async (formUrl) => {
 
   try {
     console.log('Sending request to server...');
-    const response = await fetch('http://localhost:8080/api/audit', {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    console.log('Using API URL:', apiUrl);
+    const response = await fetch(`${apiUrl}/api/audit`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -51,14 +53,18 @@ const handleSubmit = async (formUrl) => {
 
     console.log('Received response from server');
     const data = await response.json();
-    console.log('Parsed response data:', data);
+    console.log('Received data:', data);
     
-    // Ensure we have valid data before setting results
-    if (data && (data.screenshots || data.performance || data.visualAnalysis)) {
-      results.value = data;
-      console.log('Results set successfully');
+    if (data) {
+      if (data.screenshots || data.performance || data.visualAnalysis) {
+        results.value = data;
+        console.log('Results set successfully');
+      } else {
+        console.warn('Unexpected response structure:', data);
+        throw new Error('Invalid response data received from server');
+      }
     } else {
-      throw new Error('Invalid response data received from server');
+      throw new Error('No data received from server');
     }
   } catch (e) {
     console.error('Error during audit:', e);
