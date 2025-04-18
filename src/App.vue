@@ -41,8 +41,8 @@ const loading = ref(false);
 const error = ref('');
 const results = ref(null);
 
-// Use the deployed server URL
-const apiUrl = 'https://audit-server-7nw6.onrender.com/api/audit';
+// Use the API URL from environment variables
+const apiUrl = import.meta.env.VITE_API_URL + '/api/audit';
 
 onMounted(() => {
   console.log('App mounted, API URL:', apiUrl);
@@ -54,9 +54,10 @@ const handleSubmit = async (submittedUrl) => {
   error.value = '';
   results.value = null;
   
+  console.log('Submitting URL:', url.value);
+  console.log('Using API URL:', apiUrl);
+  
   try {
-    console.log('Submitting URL:', url.value);
-    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -65,25 +66,22 @@ const handleSubmit = async (submittedUrl) => {
       body: JSON.stringify({ url: url.value }),
     });
     
-    console.log('Response status:', response.status);
-    
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Server returned ${response.status}: ${errorText}`);
+      const errorData = await response.text();
+      throw new Error(`Server responded with status ${response.status}: ${errorData}`);
     }
     
     const data = await response.json();
-    console.log('Received data:', data);
+    console.log('Response data:', data);
     
-    if (!data) {
-      throw new Error('Empty response from server');
+    if (data.error) {
+      error.value = data.error;
+    } else {
+      results.value = data;
     }
-    
-    results.value = data;
-    
   } catch (err) {
-    console.error('Error during submission:', err);
-    error.value = `Failed to analyze website: ${err.message}`;
+    console.error('Error during fetch:', err);
+    error.value = `Failed to connect to the audit server: ${err.message}`;
   } finally {
     loading.value = false;
   }
