@@ -1,0 +1,16 @@
+{
+  "name": "website-audit-client",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-vue": "^5.2.3",
+    "vue": "^3.3.4"
+  },
+  "devDependencies": {
+    "vite": "^5.2.8"
+  }
+}
