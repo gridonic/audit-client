@@ -1,24 +1,51 @@
-// ==== Client Side (Vue) ====
-// File: /client/src/App.vue
 <template>
-  <div class="p-6 max-w-xl mx-auto">
-    <input v-model="url" placeholder="Enter website URL" class="border rounded p-2 w-full" />
-    <button @click="handleSubmit" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded">Run Audit</button>
-
-    <div v-if="loading" class="space-y-4 mt-8">
-      <div class="h-8 bg-gray-200 animate-pulse"></div>
-      <div class="h-40 bg-gray-200 animate-pulse"></div>
-      <div class="h-60 bg-gray-200 animate-pulse"></div>
+  <div class="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-gray-100 to-gray-200 py-20 px-4">
+    <div class="w-full max-w-xl bg-white p-8 rounded-2xl shadow-xl">
+      <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">🔍 Website Audit Tool</h1>
+      <input
+        v-model="url" 
+        placeholder="https://example.com"
+        class="border border-gray-300 rounded-xl p-4 w-full text-base shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200" 
+      />
+      <button 
+        @click="handleSubmit" 
+        class="mt-4 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl transition duration-300 ease-in-out">
+        🚀 Run Audit
+      </button>
     </div>
 
-    <div v-if="result" class="mt-8 space-y-6">
-      <img :src="result.screenshotDesktop" alt="Desktop Screenshot" class="w-full border rounded" />
-      <img :src="result.screenshotMobile" alt="Mobile Screenshot" class="w-full border rounded" />
-      <pre class="bg-gray-100 p-4 rounded whitespace-pre-wrap text-sm">{{ result.audit }}</pre>
+    <div v-if="loading" class="w-full max-w-xl mt-10 space-y-4">
+      <div class="h-8 bg-gray-300 animate-pulse rounded-xl"></div>
+      <div class="h-48 bg-gray-300 animate-pulse rounded-xl"></div>
+      <div class="h-64 bg-gray-300 animate-pulse rounded-xl"></div>
+    </div>
+
+    <div v-if="result" class="w-full max-w-4xl mt-12 space-y-6">
+      <img :src="result.screenshotDesktop" alt="Desktop Screenshot" class="w-full border rounded-xl shadow" />
+      <img :src="result.screenshotMobile" alt="Mobile Screenshot" class="w-full border rounded-xl shadow" />
+
+      <div class="bg-white p-6 rounded-xl shadow-md">
+        <h3 class="font-bold mb-4 text-lg text-gray-700">📊 Lighthouse Scores (Desktop)</h3>
+        <div v-for="(score, key) in result.lighthouse.desktop" :key="'desktop-' + key" class="mb-4">
+          <label class="block font-medium mb-1 text-sm text-gray-700">{{ key }}: {{ Math.round(score.score * 100) }}%</label>
+          <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+            <div class="bg-green-500 h-4" :style="{ width: Math.round(score.score * 100) + '%' }"></div>
+          </div>
+        </div>
+
+        <h3 class="font-bold mt-6 mb-4 text-lg text-gray-700">📱 Lighthouse Scores (Mobile)</h3>
+        <div v-for="(score, key) in result.lighthouse.mobile" :key="'mobile-' + key" class="mb-4">
+          <label class="block font-medium mb-1 text-sm text-gray-700">{{ key }}: {{ Math.round(score.score * 100) }}%</label>
+          <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+            <div class="bg-blue-500 h-4" :style="{ width: Math.round(score.score * 100) + '%' }"></div>
+          </div>
+        </div>
+      </div>
+
+      <pre class="bg-white p-6 rounded-xl shadow-inner whitespace-pre-wrap text-sm text-gray-800">{{ result.audit }}</pre>
     </div>
   </div>
 </template>
-
 <script>
 export default {
   data() {
@@ -34,7 +61,7 @@ export default {
       this.result = null;
       try {
         const serverUrl = process.env.NODE_ENV === 'development' 
-          ? "http://localhost:300/audit" 
+          ? "http://localhost:3000" 
           : "https://audit-server-7nw6.onrender.com";
         const response = await fetch(`${serverUrl}/audit`, {
           method: "POST",
